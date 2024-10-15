@@ -7,6 +7,7 @@ from django.conf import settings
 # Custom User model
 class User(AbstractUser):
     bio = models.TextField(blank=True, null=True)
+    email = models.EmailField(unique=True)  # Email field with unique constraint
     profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
 
     def __str__(self):

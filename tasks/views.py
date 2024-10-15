@@ -4,8 +4,30 @@ from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from .models import Task, User  # Use your custom User model
+from .models import Task, User
 from .serializers import TaskSerializer, UserSerializer
+
+from django.contrib.auth.forms import UserCreationForm
+from django.urls import reverse_lazy
+from django.views import generic
+from django.views.generic.edit import UpdateView
+from django.contrib.auth.mixins import LoginRequiredMixin
+
+# User Profile Update View
+class ProfileUpdateView(LoginRequiredMixin, UpdateView):
+    model = User
+    fields = ['username', 'email', 'bio', 'profile_picture']
+    template_name = 'profile_update.html'
+    success_url = reverse_lazy('task-overview')
+
+    def get_object(self):
+        return self.request.user
+
+# User Registration View
+class RegisterView(generic.CreateView):
+    form_class = UserCreationForm
+    template_name = 'register.html'
+    success_url = reverse_lazy('login')
 
 # ViewSets for Users and Tasks
 class UserViewSet(viewsets.ModelViewSet):
@@ -17,10 +39,13 @@ class TaskViewSet(viewsets.ModelViewSet):
     serializer_class = TaskSerializer
 
     def get_queryset(self):
-        queryset = super().get_queryset().filter(user=self.request.user)  # Filter tasks by the logged-in user
-        status_filter = self.request.query_params.get('status', None)
-        priority_filter = self.request.query_params.get('priority', None)
-        due_date_filter = self.request.query_params.get('due_date', None)
+        # Filter tasks by logged-in user
+        queryset = super().get_queryset().filter(user=self.request.user)
+        
+        # Filtering logic
+        status_filter = self.request.query_params.get('status')
+        priority_filter = self.request.query_params.get('priority')
+        due_date_filter = self.request.query_params.get('due_date')
 
         if status_filter:
             queryset = queryset.filter(status=status_filter)
@@ -45,33 +70,30 @@ def taskOverview(request):
     }
     return Response(tasks_urls)
 
-# List all tasks (Function-Based View)
+# Function-Based Views for Tasks
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def taskList(request):
-    tasks = Task.objects.filter(user=request.user)  # Only return tasks for the logged-in user
+    tasks = Task.objects.filter(user=request.user)
     serializer = TaskSerializer(tasks, many=True)
     return Response(serializer.data)
 
-# Retrieve task details (Function-Based View)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def taskDetail(request, pk):
     task = get_object_or_404(Task, id=pk, user=request.user)
-    serializer = TaskSerializer(task, many=False)
+    serializer = TaskSerializer(task)
     return Response(serializer.data)
 
-# Create a task (Function-Based View)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def taskCreate(request):
     serializer = TaskSerializer(data=request.data)
     if serializer.is_valid():
-        serializer.save(user=request.user)  # Ensure task is assigned to the logged-in user
+        serializer.save(user=request.user)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# Update a task (Function-Based View)
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def taskUpdate(request, pk):
@@ -82,15 +104,14 @@ def taskUpdate(request, pk):
         return Response(serializer.data)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# Delete a task (Function-Based View)
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
 def taskDelete(request, pk):
     task = get_object_or_404(Task, id=pk, user=request.user)
     task.delete()
-    return Response('Task deleted successfully', status=status.HTTP_204_NO_CONTENT)
+    return Response({'detail': 'Task deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
 
-# Custom Task Completion Handlers
+# Task Completion Handlers
 def set_task_status(task, status):
     task.status = status
     task.completed_at = timezone.now() if status == 'Completed' else None
@@ -117,7 +138,7 @@ def mark_task_incomplete(request, pk):
     data = set_task_status(task, 'Pending')
     return Response(data, status=status.HTTP_200_OK)
 
-# User Management Views (if needed for custom actions)
+# User Management Views
 @api_view(['POST'])
 def userCreate(request):
     serializer = UserSerializer(data=request.data)
@@ -147,4 +168,4 @@ def userDelete(request, pk):
         return Response({'error': 'You are not allowed to delete this user.'}, status=status.HTTP_403_FORBIDDEN)
     
     user.delete()
-    return Response('User deleted successfully', status=status.HTTP_204_NO_CONTENT)
+    return Response({'detail': 'User deleted successfully'}, status=status.HTTP_204_NO_CONTENT)

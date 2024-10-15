@@ -1,0 +1,68 @@
+{% extends "base.html" %} 
+
+{% block content %}
+
+<div class="task-container">
+  <div class="task-search">
+    <form action="" method="POST">
+     
+      {% comment %} <input type="text" placeholder="Enter Task" /> {% endcomment %}
+      {% csrf_token %}
+      {{form.title}}
+      <button>Add</button>
+    </form>
+  </div>
+
+  <div class="task-list">
+
+    <ul>
+      {% for task in tasks %}
+        <li>
+          <strong>{{ task.title }}</strong> - {{ task.get_priority_display }} - {{ task.due_date }} 
+          - Status: {{ task.get_status_display }}<br>
+          <a href="{% url 'task-detail' task.id %}">View</a> | 
+          <a href="{% url 'task-update' task.id %}">Edit</a> | 
+          <a href="{% url 'task-delete' task.id %}">Delete</a>
+        </li>
+      {% empty %}
+        <p>No tasks found. <a href="{% url 'task-create' %}">Create a new task</a></p>
+  
+    
+    
+    {% for task in tasks %}
+
+    <div class="task-list-item">
+      <div class="task">
+        <input type="checkbox" />
+        <p>{{task.title}}</p>
+      </div>
+
+      <div class="btn-container">
+        <div class="edit">
+          <a href="{% url 'task-update' task.id %}">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </a>
+        </div>
+        <div class="del">
+          <a href="{% url 'task-delete' task.id %}">
+            <i class="fa-solid fa-trash-can"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+      
+    {% endfor %}
+      
+   
+
+
+
+
+
+   
+
+ 
+  </div>
+</div>
+
+{% endblock content %}
