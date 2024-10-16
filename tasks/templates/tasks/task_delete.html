@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {% extends "base.html" %}
 
 
@@ -20,3 +21,27 @@
     
 {% endblock content %}
     
+=======
+{% extends "base.html" %}
+
+
+{% block content %}
+
+<div class="delete-container">
+    <p>Are you sure want to delete</p>
+    <h4>"{{task.title}}"</h4>
+    <div class="btn-container">
+        <a href="{% url 'task-list' %}">
+            <button class="btn-cancel">Cancel</button>
+        </a>
+        <form action="" method='POST'>
+            {% csrf_token %}
+            <button class="btn-delete">Delete</button>
+        </form>
+       
+    </div>
+</div>
+    
+{% endblock content %}
+    
+>>>>>>> 4aa1dd1b61df977a0b58660235ba7ebe1a888dc9
